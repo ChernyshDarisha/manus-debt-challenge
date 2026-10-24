@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.manus.local/public_source_risk_record.schema.json",
+  "title": "Public Source Risk Indicator Record",
+  "description": "A source-grounded record of a public-source indicator. The schema records status and provenance; it does not determine guilt, intent, or legal liability.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "subject",
+    "public_role",
+    "indicator_type",
+    "status",
+    "evidence_level",
+    "source",
+    "excerpt",
+    "review",
+    "publication"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "pattern": "^UA-PSR-[0-9]{4}-[0-9]{6}$",
+      "description": "Stable internal record identifier."
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display_name", "entity_type", "public_identifier"],
+      "properties": {
+        "display_name": {"type": "string", "minLength": 2},
+        "entity_type": {"enum": ["public_person", "legal_entity", "public_body"]},
+        "public_identifier": {
+          "type": "string",
+          "description": "Identifier disclosed in the cited public source; do not insert private personal data."
+        }
+      }
+    },
+    "public_role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "body", "jurisdiction", "term"],
+      "properties": {
+        "title": {"type": "string"},
+        "body": {"type": "string"},
+        "jurisdiction": {"type": "string"},
+        "term": {"type": "string"}
+      }
+    },
+    "indicator_type": {
+      "enum": [
+        "sanctions",
+        "court_status",
+        "corruption_registry",
+        "declaration_disclosure",
+        "official_vote",
+        "official_decision",
+        "regulatory_impact",
+        "official_procedural_notice"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Exact legal or factual status, with no inference of guilt, motive, or intent."
+    },
+    "evidence_level": {"enum": ["E1", "E2", "E3", "E4"]},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "publisher", "document_date", "retrieved_at", "copy_sha3_256"],
+      "properties": {
+        "url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "publisher": {"type": "string"},
+        "document_date": {"type": "string", "format": "date"},
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "copy_sha3_256": {"type": "string", "pattern": "^sha3-256:[a-f0-9]{64}$"},
+        "source_access_status": {
+          "enum": ["verified", "source_currently_unavailable", "not_verified"]
+        }
+      }
+    },
+    "excerpt": {
+      "type": "string",
+      "minLength": 20,
+      "description": "Source-grounded summary or short quote without interpretive labels."
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "business_impact_mechanism": {"type": "string"},
+        "counter_evidence_or_alternative_explanation": {"type": "string"},
+        "updates_or_appeals": {"type": "string"},
+        "public_response_of_subject": {"type": "string"}
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prepared_by", "reviewed_by", "reviewed_at"],
+      "properties": {
+        "prepared_by": {"type": "string"},
+        "reviewed_by": {"type": "string"},
+        "reviewed_at": {"type": "string", "format": "date-time"},
+        "review_notes": {"type": "string"}
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "public_summary"],
+      "properties": {
+        "decision": {"enum": ["publish", "internal_review", "exclude"]},
+        "public_summary": {"type": "string"},
+        "published_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"evidence_level": {"const": "E4"}}},
+      "then": {
+        "properties": {
+          "publication": {
+            "properties": {"decision": {"const": "exclude"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"evidence_level": {"const": "E3"}}},
+      "then": {
+        "properties": {
+          "publication": {
+            "properties": {"decision": {"enum": ["internal_review", "exclude"]}}
+          }
+        }
+      }
+    }
+  ]
+}
